@@ -99,3 +99,15 @@ func (s *GrpcServer) UpdateUser(ctx context.Context, req *user.CreateUserRequest
 
 	return &user.NoResponse{}, nil
 }
+
+func (s *GrpcServer) DeleteUser(ctx context.Context, req *user.DetailUserRequest) (*user.NoResponse, error) {
+	service := user_service.NewUserRepository(mysql.DOTestDB)
+	request := s.builder.DeleteUserRequest(req)
+
+	_, err := action.NewDeleteUser(service).Handler(ctx, &request)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user.NoResponse{}, nil
+}

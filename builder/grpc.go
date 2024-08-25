@@ -33,3 +33,10 @@ func (g *Grpc) UpdateUserRequest(reqPb *pb.CreateUserRequest) (data entity.User)
 
 	return data
 }
+
+func (g *Grpc) DeleteUserRequest(reqPb *pb.DetailUserRequest) (data entity.User) {
+	bytes, _ := json.Marshal(&reqPb)
+	json.Unmarshal(bytes, &data)
+
+	return data
+}

@@ -58,3 +58,12 @@ func (r *UserRepository) Update(ctx context.Context, user *entity.User) error {
 	}
 	return nil
 }
+
+func (r *UserRepository) Delete(ctx context.Context, user *entity.User) (*entity.User, error) {
+	result := r.DB.Where("id = ?", user.ID).Delete(user)
+	if result.Error != nil {
+		log.Println(result.Error)
+		return nil, result.Error
+	}
+	return user, nil
+}

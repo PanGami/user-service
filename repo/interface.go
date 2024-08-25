@@ -13,4 +13,5 @@ type IUser interface {
 	Detail(ctx context.Context, user *entity.User) (*entity.User, error)
 	List(ctx context.Context, page, pageSize int) ([]*entity.User, int, error)
 	Update(ctx context.Context, user *entity.User) error
+	Delete(ctx context.Context, user *entity.User) (*entity.User, error)
 }
