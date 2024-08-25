@@ -5,6 +5,7 @@ import (
 
 	"github.com/pangami/user-service/entity"
 	"github.com/pangami/user-service/repo"
+	"github.com/pangami/user-service/util"
 )
 
 type CreateUser struct {
@@ -18,7 +19,14 @@ func NewCreateUser(userRepo repo.IUser) *CreateUser {
 }
 
 func (a *CreateUser) Handler(ctx context.Context, user *entity.User) error {
-	err := a.repoUser.Create(ctx, user)
+	hashedPassword, err := util.HashPassword(user.Password)
+	if err != nil {
+		return err
+	}
+
+	user.Password = hashedPassword
+
+	err = a.repoUser.Create(ctx, user)
 	if err != nil {
 		return err
 	}
