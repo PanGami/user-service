@@ -10,6 +10,8 @@ import (
 	"github.com/pangami/user-service/repo/mysql"
 	"github.com/pangami/user-service/repo/redis"
 	user "github.com/pangami/user-service/transport/grpc/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type GrpcServer struct {
@@ -53,6 +55,11 @@ func (s *GrpcServer) DetailUser(ctx context.Context, req *user.DetailUserRequest
 		userDetail, err = action.NewDetailUser(service).Handler(ctx, &request)
 		if err != nil {
 			return nil, err
+		}
+
+		// If userDetail is still nil, return a NotFound error
+		if userDetail == nil {
+			return nil, status.Error(codes.NotFound, "User not found")
 		}
 
 		// Save the fetched user details to cache
