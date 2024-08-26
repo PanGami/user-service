@@ -8,6 +8,7 @@ import (
 	builder "github.com/pangami/user-service/builder"
 	user_service "github.com/pangami/user-service/repo"
 	"github.com/pangami/user-service/repo/mysql"
+	"github.com/pangami/user-service/repo/redis"
 	user "github.com/pangami/user-service/transport/grpc/proto"
 )
 
@@ -44,10 +45,27 @@ func (s *GrpcServer) DetailUser(ctx context.Context, req *user.DetailUserRequest
 
 	log.Println("REQUEST ID: ", request.ID)
 
-	// Invoke the action to get user details
-	userDetail, err := action.NewDetailUser(service).Handler(ctx, &request)
+	// Check cache first
+	userDetail, err := user_service.GetUserFromCache(ctx, redis.Client, int(request.ID))
 	if err != nil {
-		return nil, err
+		log.Println("Error fetching user from cache:", err)
+	}
+
+	if userDetail == nil {
+		// Cache miss; fetch from DB
+		log.Println("Cache miss; fetching from database")
+		userDetail, err = action.NewDetailUser(service).Handler(ctx, &request)
+		if err != nil {
+			return nil, err
+		}
+
+		// Save the fetched user details to cache
+		err = user_service.SaveUserToCache(ctx, redis.Client, userDetail)
+		if err != nil {
+			log.Println("Error saving user to cache:", err)
+		}
+	} else {
+		log.Println("Cache hit; returning user from cache")
 	}
 
 	// Prepare and return the gRPC response

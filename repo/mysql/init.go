@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pangami/user-service/entity"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -27,6 +28,12 @@ func InitCon() {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("CONNECT DB FAILED: %s\n", err)
+	}
+
+	// Automatically migrate the `User` struct to the database schema
+	err = db.AutoMigrate(&entity.User{})
+	if err != nil {
+		log.Fatalf("failed to migrate database schema: %v", err)
 	}
 
 	sqlDB, err := db.DB()

@@ -9,7 +9,7 @@ service User {
     rpc DetailUser (DetailUserRequest) returns (DetailUserResponse);
     rpc UpdateUser (CreateUserRequest) returns (NoResponse);
     rpc DeleteUser (DetailUserRequest) returns (NoResponse);
-    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse); // New RPC for listing users
+    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
 }
 
 message NoResponse {}

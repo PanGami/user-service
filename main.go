@@ -9,6 +9,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/pangami/user-service/repo/mysql"
+	"github.com/pangami/user-service/repo/redis"
+
 	// "github.com/pangami/auth-service/repo/mongo"
 	"github.com/pangami/user-service/transport/grpc"
 )
@@ -21,6 +23,7 @@ func main() {
 
 	// init repo
 	mysql.InitCon()
+	redis.InitCon()
 	// mongo.InitCon()
 
 	e := echo.New()

@@ -2,8 +2,12 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/pangami/user-service/entity"
 	"gorm.io/gorm"
 )
@@ -66,4 +70,39 @@ func (r *UserRepository) Delete(ctx context.Context, user *entity.User) (*entity
 		return nil, result.Error
 	}
 	return user, nil
+}
+
+// SaveUserToCache caches user details in Redis with an expiration time
+func SaveUserToCache(ctx context.Context, redisClient *redis.Client, userDetail *entity.User) error {
+	cacheKey := "user_detail_" + string(userDetail.ID)
+	userData, err := json.Marshal(userDetail)
+	if err != nil {
+		return err
+	}
+
+	err = redisClient.Set(ctx, cacheKey, userData, 5*time.Minute).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetUserFromCache retrieves user details from Redis
+func GetUserFromCache(ctx context.Context, redisClient *redis.Client, userID int) (*entity.User, error) {
+	cacheKey := "user_detail_" + fmt.Sprint(userID)
+	cachedUser, err := redisClient.Get(ctx, cacheKey).Result()
+	if err == redis.Nil {
+		return nil, nil // Cache miss
+	} else if err != nil {
+		return nil, err
+	}
+
+	var userDetail entity.User
+	err = json.Unmarshal([]byte(cachedUser), &userDetail)
+	if err != nil {
+		return nil, err
+	}
+
+	return &userDetail, nil
 }
