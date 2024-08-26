@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pangami/user-service/entity"
+	"github.com/pangami/user-service/util"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -51,4 +52,7 @@ func InitCon() {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	DOTestDB = db
+
+	// Insert default users data (mock) into the database
+	util.InsertMockData(db)
 }

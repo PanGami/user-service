@@ -2,9 +2,12 @@ package util
 
 import (
 	"errors"
+	"log"
 	"time"
 
+	"github.com/pangami/user-service/entity"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 const (
@@ -31,4 +34,36 @@ func HashPassword(password string) (string, error) {
 		return "", errors.New("failed to hash password")
 	}
 	return string(bytes), nil
+}
+
+// InsertMockData inserts default users data (mock) into the database
+func InsertMockData(db *gorm.DB) {
+	hashedPassword, _ := HashPassword("p4Nc4~Pass!")
+
+	mockUsers := []entity.User{
+		{Username: "panca", FullName: "Panca Nugraha Wicaksana", Password: hashedPassword},
+		{Username: "nugraha", FullName: "Nugraha Wicaksana", Password: hashedPassword},
+	}
+
+	for _, user := range mockUsers {
+		var existingUser entity.User
+
+		result := db.Where("username = ?", user.Username).First(&existingUser)
+
+		if result.Error == nil {
+			log.Printf("Default user %s already exists, skipping insert.", user.Username)
+			continue
+		}
+
+		if result.Error != gorm.ErrRecordNotFound {
+			log.Printf("Error checking for existing user %s: %v", user.Username, result.Error)
+			continue
+		}
+
+		err := db.Create(&user).Error
+
+		if err == nil {
+			log.Printf("Inserted default user %s", user.Username)
+		}
+	}
 }
