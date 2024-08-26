@@ -106,3 +106,14 @@ func GetUserFromCache(ctx context.Context, redisClient *redis.Client, userID int
 
 	return &userDetail, nil
 }
+
+// DeleteUserFromCache deletes user details from Redis
+func DeleteUserFromCache(ctx context.Context, redisClient *redis.Client, userID int) error {
+	cacheKey := "user_detail_" + fmt.Sprint(userID)
+	_, err := redisClient.Del(ctx, cacheKey).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -38,12 +38,8 @@ func (s *GrpcServer) CreateUser(ctx context.Context, req *user.CreateUserRequest
 func (s *GrpcServer) DetailUser(ctx context.Context, req *user.DetailUserRequest) (*user.DetailUserResponse, error) {
 	service := user_service.NewUserRepository(mysql.DOTestDB)
 
-	log.Println("REQ ID: ", req)
-
 	// Create a request entity for the action handler
 	request := s.builder.DetailUserRequest(req)
-
-	log.Println("REQUEST ID: ", request.ID)
 
 	// Check cache first
 	userDetail, err := user_service.GetUserFromCache(ctx, redis.Client, int(request.ID))
@@ -82,9 +78,6 @@ func (s *GrpcServer) DetailUser(ctx context.Context, req *user.DetailUserRequest
 func (s *GrpcServer) ListUsers(ctx context.Context, req *user.ListUsersRequest) (*user.ListUsersResponse, error) {
 	service := user_service.NewUserRepository(mysql.DOTestDB)
 
-	log.Println("REQ Page: ", req.Page)
-	log.Println("REQ PageSize: ", req.PageSize)
-
 	// Call the action to get the list of users
 	entityResponse, err := action.NewListUsers(service).Handler(ctx, int(req.Page), int(req.PageSize))
 	if err != nil {
@@ -110,7 +103,13 @@ func (s *GrpcServer) UpdateUser(ctx context.Context, req *user.CreateUserRequest
 	service := user_service.NewUserRepository(mysql.DOTestDB)
 	request := s.builder.UpdateUserRequest(req)
 
-	err := action.NewUpdateUser(service).Handler(ctx, &request)
+	// Delete user from cache before updating the database
+	err := user_service.DeleteUserFromCache(ctx, redis.Client, int(request.ID))
+	if err != nil {
+		log.Println("Error deleting user from cache:", err)
+	}
+
+	err = action.NewUpdateUser(service).Handler(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +121,13 @@ func (s *GrpcServer) DeleteUser(ctx context.Context, req *user.DetailUserRequest
 	service := user_service.NewUserRepository(mysql.DOTestDB)
 	request := s.builder.DeleteUserRequest(req)
 
-	_, err := action.NewDeleteUser(service).Handler(ctx, &request)
+	// Delete user from cache before deleting from the database
+	err := user_service.DeleteUserFromCache(ctx, redis.Client, int(request.ID))
+	if err != nil {
+		log.Println("Error deleting user from cache:", err)
+	}
+
+	_, err = action.NewDeleteUser(service).Handler(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
