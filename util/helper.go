@@ -1,11 +1,13 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
 
 	"github.com/pangami/user-service/entity"
+	"github.com/pangami/user-service/repo"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -36,34 +38,75 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), nil
 }
 
-// InsertMockData inserts default users data (mock) into the database
-func InsertMockData(db *gorm.DB) {
-	hashedPassword, _ := HashPassword("p4Nc4~Pass!")
-
-	mockUsers := []entity.User{
-		{Username: "panca", FullName: "Panca Nugraha Wicaksana", Password: hashedPassword},
-		{Username: "nugraha", FullName: "Nugraha Wicaksana", Password: hashedPassword},
+// InsertMockData inserts default users and their activities (mock) into the database
+func InsertMockData(db *gorm.DB, userRepo *repo.UserRepository) {
+	if db == nil {
+		log.Fatalf("Database connection is nil")
 	}
 
-	for _, user := range mockUsers {
+	if userRepo == nil {
+		log.Fatalf("UserRepository is nil")
+	}
+
+	if db == nil {
+		log.Fatalf("GORM DB instance is nil. Check if the database connection was initialized correctly.")
+	}
+
+	hashedPassword, _ := HashPassword("p4Nc4~Pass!")
+
+	mockUsers := []struct {
+		User       entity.User
+		Activities []entity.UserActivity
+	}{
+		{
+			User: entity.User{
+				Username: "panca",
+				FullName: "Panca Nugraha Wicaksana",
+				Password: hashedPassword,
+			},
+			Activities: []entity.UserActivity{
+				{Action: "Login", Timestamp: time.Now()},
+				{Action: "View Dashboard", Timestamp: time.Now()},
+			},
+		},
+		{
+			User: entity.User{
+				Username: "nugraha",
+				FullName: "Nugraha Wicaksana",
+				Password: hashedPassword,
+			},
+			Activities: []entity.UserActivity{
+				{Action: "Login", Timestamp: time.Now()},
+				{Action: "Edit Profile", Timestamp: time.Now()},
+			},
+		},
+	}
+
+	for _, mock := range mockUsers {
 		var existingUser entity.User
 
-		result := db.Where("username = ?", user.Username).First(&existingUser)
+		result := db.Where("username = ?", mock.User.Username).First(&existingUser)
 
 		if result.Error == nil {
-			log.Printf("Default user %s already exists, skipping insert.", user.Username)
+			log.Printf("Default user %s already exists, skipping insert.", mock.User.Username)
 			continue
 		}
 
 		if result.Error != gorm.ErrRecordNotFound {
-			log.Printf("Error checking for existing user %s: %v", user.Username, result.Error)
+			log.Printf("Error checking for existing user %s: %v", mock.User.Username, result.Error)
 			continue
 		}
 
-		err := db.Create(&user).Error
-
+		// Use CreateUserWithActivities method to insert user and activities
+		activities := make([]*entity.UserActivity, len(mock.Activities))
+		for i, activity := range mock.Activities {
+			activities[i] = &activity
+		}
+		err := userRepo.CreateUserWithActivities(context.Background(), &mock.User, activities)
 		if err == nil {
-			log.Printf("Inserted default user %s", user.Username)
+			log.Printf("Inserted default user %s with activities", mock.User.Username)
+		} else {
+			log.Printf("Failed to insert user %s with activities: %v", mock.User.Username, err)
 		}
 	}
 }

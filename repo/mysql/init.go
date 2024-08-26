@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pangami/user-service/entity"
+	"github.com/pangami/user-service/repo"
 	"github.com/pangami/user-service/util"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -32,7 +33,8 @@ func InitCon() {
 	}
 
 	// Automatically migrate the `User` struct to the database schema
-	err = db.AutoMigrate(&entity.User{})
+	err = db.AutoMigrate(&entity.User{}, &entity.UserActivity{})
+
 	if err != nil {
 		log.Fatalf("failed to migrate database schema: %v", err)
 	}
@@ -54,5 +56,6 @@ func InitCon() {
 	DOTestDB = db
 
 	// Insert default users data (mock) into the database
-	util.InsertMockData(db)
+	userRepo := repo.NewUserRepository(db)
+	util.InsertMockData(db, userRepo)
 }

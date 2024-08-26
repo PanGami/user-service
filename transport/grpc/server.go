@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"log"
+	"time"
 
 	action "github.com/pangami/user-service/action/user"
 	builder "github.com/pangami/user-service/builder"
@@ -140,4 +141,28 @@ func (s *GrpcServer) DeleteUser(ctx context.Context, req *user.DetailUserRequest
 	}
 
 	return &user.NoResponse{}, nil
+}
+
+func (s *GrpcServer) GetUserActivities(ctx context.Context, req *user.DetailUserRequest) (*user.UserActivitiesResponse, error) {
+	service := user_service.NewUserActivityRepository(mysql.DOTestDB)
+
+	// Fetch activities by User ID
+	activities, err := service.GetActivitiesByUserID(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to gRPC response format
+	var responseActivities []*user.UserActivityResponse
+	for _, activity := range activities {
+		responseActivities = append(responseActivities, &user.UserActivityResponse{
+			Id:        activity.ID,
+			Action:    activity.Action,
+			Timestamp: activity.Timestamp.Format(time.RFC3339),
+		})
+	}
+
+	return &user.UserActivitiesResponse{
+		Activities: responseActivities,
+	}, nil
 }
