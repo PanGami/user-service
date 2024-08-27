@@ -1,8 +1,4 @@
-Here's a beautified and structured version of your `readme.md`:
-
----
-
-# Technical Test DOT
+# Technical Test DOT - [user-service](https://github.com/PanGami/user-service)
 
 ## Project Structure
 
